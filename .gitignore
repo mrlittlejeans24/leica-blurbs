@@ -1,0 +1,17 @@
+# Gradle / build output
+.gradle/
+build/
+app/build/
+captures/
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+.DS_Store
+
+# Local SDK location — machine specific, must not be committed
+local.properties
+
+# Keystores / secrets
+*.jks
+*.keystore

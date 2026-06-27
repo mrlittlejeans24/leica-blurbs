@@ -1,0 +1,5 @@
+<resources>
+    <!-- Base theme is supplied by Compose at runtime; this is only used before
+         the Compose content takes over (splash window) and for system bars. -->
+    <style name="Theme.DealWatch" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

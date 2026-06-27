@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">DealWatch</string>
+    <string name="deal_channel_name">Deal alerts</string>
+    <string name="deal_channel_description">Notifies you when a tracked product hits a new lowest price.</string>
+</resources>
