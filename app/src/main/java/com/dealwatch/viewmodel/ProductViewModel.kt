@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.dealwatch.data.PricePoint
 import com.dealwatch.data.ProductRepository
+import com.dealwatch.data.SettingsStore
 import com.dealwatch.data.TrackedProduct
 import com.dealwatch.work.PriceCheckScheduler
 import kotlinx.coroutines.flow.Flow
@@ -44,6 +45,14 @@ class ProductViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun checkNow() {
+        PriceCheckScheduler.checkNow(getApplication())
+    }
+
+    fun getApiKey(): String = SettingsStore.getSerpApiKey(getApplication()).orEmpty()
+
+    fun saveApiKey(key: String) {
+        SettingsStore.setSerpApiKey(getApplication(), key)
+        // Re-check everything immediately so the new key takes effect visibly.
         PriceCheckScheduler.checkNow(getApplication())
     }
 }

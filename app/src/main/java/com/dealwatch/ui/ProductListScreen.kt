@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -37,6 +38,7 @@ fun ProductListScreen(
     onAdd: () -> Unit,
     onOpen: (Long) -> Unit,
     onCheckNow: () -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -45,6 +47,9 @@ fun ProductListScreen(
                 actions = {
                     IconButton(onClick = onCheckNow) {
                         Icon(Icons.Default.Refresh, contentDescription = "Check prices now")
+                    }
+                    IconButton(onClick = onOpenSettings) {
+                        Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }
                 },
             )
@@ -90,17 +95,27 @@ private fun ProductCard(product: TrackedProduct, onClick: () -> Unit) {
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
             )
-            Text(
-                text = "Best now: ${formatPrice(product.currency, product.currentPrice)}" +
-                    (product.currentStore?.let { "  ·  $it" } ?: ""),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            Text(
-                text = "Lowest ever: ${formatPrice(product.currency, product.lowestEverPrice)}" +
-                    "  ·  checked ${relativeTime(product.lastCheckedAt)}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            if (product.currentPrice != null) {
+                Text(
+                    text = "Best now: ${formatPrice(product.currency, product.currentPrice)}" +
+                        (product.currentStore?.let { "  ·  $it" } ?: ""),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = "Lowest ever: ${formatPrice(product.currency, product.lowestEverPrice)}" +
+                        "  ·  checked ${relativeTime(product.lastCheckedAt)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                // No price yet — show why (e.g. "Search blocked", "checking…").
+                Text(
+                    text = product.lastCheckStatus
+                        ?: if (product.lastCheckedAt == null) "Checking…" else "No price found",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }

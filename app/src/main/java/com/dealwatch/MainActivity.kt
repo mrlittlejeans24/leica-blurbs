@@ -21,6 +21,7 @@ import androidx.navigation.navArgument
 import com.dealwatch.ui.AddProductScreen
 import com.dealwatch.ui.ProductDetailScreen
 import com.dealwatch.ui.ProductListScreen
+import com.dealwatch.ui.SettingsScreen
 import com.dealwatch.ui.theme.DealWatchTheme
 import com.dealwatch.viewmodel.ProductViewModel
 
@@ -59,6 +60,14 @@ private fun AppRoot(vm: ProductViewModel) {
                 onAdd = { navController.navigate("add") },
                 onOpen = { id -> navController.navigate("detail/$id") },
                 onCheckNow = vm::checkNow,
+                onOpenSettings = { navController.navigate("settings") },
+            )
+        }
+        composable("settings") {
+            SettingsScreen(
+                initialKey = vm.getApiKey(),
+                onSave = { key -> vm.saveApiKey(key) },
+                onBack = { navController.popBackStack() },
             )
         }
         composable("add") {

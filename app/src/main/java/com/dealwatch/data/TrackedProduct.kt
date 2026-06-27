@@ -23,4 +23,6 @@ data class TrackedProduct(
     val lowestEverPrice: Double? = null,
     val currency: String = "$",
     val notificationsEnabled: Boolean = true,
+    /** Human-readable result of the most recent check (e.g. "Found 7 offers"). */
+    val lastCheckStatus: String? = null,
 )

@@ -22,23 +22,34 @@ keys required.
 
 ## How price-finding works (and its limits)
 
-By design there is **no backend and no API key**. The app fetches public web
-search (shopping) results directly on the device and parses prices out of the
-HTML.
+There are two backends, selected automatically at check time by
+[`RoutingPriceFinder`](app/src/main/java/com/dealwatch/data/remote/RoutingPriceFinder.kt):
 
-This keeps the app free and self-contained, but **HTML scraping is inherently
-fragile**: search providers change their markup and may rate-limit or block
-automated requests, so results can be incomplete or temporarily dry up. The
-parser is written defensively (it scans for price-shaped tokens rather than
-relying on specific CSS classes) so it degrades to "fewer/no results" instead of
-crashing.
+1. **Keyless scraping (default, zero setup)** —
+   [`WebScrapePriceFinder`](app/src/main/java/com/dealwatch/data/remote/WebScrapePriceFinder.kt)
+   searches DuckDuckGo's HTML endpoint, follows the top retailer links, and reads
+   each page's price from its structured metadata (schema.org JSON-LD
+   `offers.price`, or Open Graph / `itemprop` price tags). Reading a page's own
+   structured data is far more accurate than parsing search snippets.
 
-If you want more reliable results later, everything goes through one interface,
-[`PriceFinder`](app/src/main/java/com/dealwatch/data/remote/PriceFinder.kt). Drop
-in an implementation backed by a paid price API (e.g. SerpApi or a retailer
-feed), wire it into
-[`ProductRepository`](app/src/main/java/com/dealwatch/data/ProductRepository.kt),
-and nothing else has to change.
+   **Caveat:** this is genuinely best-effort. The sources that expose clean
+   structured prices (Google Shopping, eBay) actively block bots, and the ones
+   that don't block (DuckDuckGo) can still rate-limit or omit prices. So keyless
+   checks can come back incomplete or empty. When that happens the app shows the
+   reason on the product card (e.g. "Search blocked — add a free API key").
+
+2. **SerpApi (reliable, recommended)** —
+   [`SerpApiPriceFinder`](app/src/main/java/com/dealwatch/data/remote/SerpApiPriceFinder.kt)
+   calls SerpApi's Google Shopping engine and gets clean structured JSON (price,
+   store, link). Add a free key in **Settings** (the free tier covers ~100
+   checks/month — plenty for a few products a day). When a key is set, the app
+   uses it; otherwise it falls back to keyless scraping. The key is stored only
+   on the device.
+
+Both backends implement one interface,
+[`PriceFinder`](app/src/main/java/com/dealwatch/data/remote/PriceFinder.kt), so a
+third source (a retailer feed, a different API) is just another implementation
+wired into `RoutingPriceFinder`.
 
 ## Architecture
 
@@ -49,7 +60,7 @@ Single-module Android app, Kotlin + Jetpack Compose, MVVM.
 | UI | Jetpack Compose + Material 3, Navigation Compose (`ui/`, `MainActivity.kt`) |
 | State | `ProductViewModel` exposing Room `Flow`s as Compose state |
 | Data | Room (`TrackedProduct`, `PricePoint`, `ProductDao`, `DealDatabase`), `ProductRepository` |
-| Price source | `PriceFinder` interface + `WebScrapePriceFinder` (OkHttp + Jsoup) |
+| Price source | `PriceFinder` interface, `RoutingPriceFinder` → `SerpApiPriceFinder` (key) or `WebScrapePriceFinder` (keyless, OkHttp + Jsoup) |
 | Background | `PriceCheckWorker` + `PriceCheckScheduler` (WorkManager, daily, network-constrained) |
 | Notifications | `DealNotifier` (notification channel + deal alerts) |
 

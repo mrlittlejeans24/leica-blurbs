@@ -2,7 +2,7 @@ package com.dealwatch.data
 
 import android.content.Context
 import com.dealwatch.data.remote.PriceFinder
-import com.dealwatch.data.remote.WebScrapePriceFinder
+import com.dealwatch.data.remote.RoutingPriceFinder
 import kotlinx.coroutines.flow.Flow
 
 /** Result of a check that crossed the alert threshold (a new all-time low). */
@@ -16,8 +16,7 @@ data class DealAlert(
 
 class ProductRepository(
     private val dao: ProductDao,
-    // Swap this for an API-backed PriceFinder to make checks more reliable.
-    private val finder: PriceFinder = WebScrapePriceFinder(),
+    private val finder: PriceFinder,
 ) {
     fun observeProducts(): Flow<List<TrackedProduct>> = dao.observeProducts()
     fun observeProduct(id: Long): Flow<TrackedProduct?> = dao.observeProduct(id)
@@ -44,12 +43,12 @@ class ProductRepository(
      * check only establishes the baseline and never alerts.
      */
     suspend fun checkProduct(product: TrackedProduct): DealAlert? {
-        val offers = finder.findPrices(product.query)
-        val best = offers.minByOrNull { it.price }
+        val lookup = finder.findPrices(product.query)
+        val best = lookup.results.minByOrNull { it.price }
         val now = System.currentTimeMillis()
 
         if (best == null) {
-            dao.update(product.copy(lastCheckedAt = now))
+            dao.update(product.copy(lastCheckedAt = now, lastCheckStatus = lookup.status))
             return null
         }
 
@@ -74,6 +73,7 @@ class ProductRepository(
                 currentUrl = best.url,
                 currency = best.currency,
                 lowestEverPrice = newLowestEver,
+                lastCheckStatus = lookup.status,
             ),
         )
 
@@ -96,8 +96,10 @@ class ProductRepository(
 
         fun get(context: Context): ProductRepository =
             instance ?: synchronized(this) {
-                instance ?: ProductRepository(DealDatabase.get(context).productDao())
-                    .also { instance = it }
+                instance ?: ProductRepository(
+                    dao = DealDatabase.get(context).productDao(),
+                    finder = RoutingPriceFinder(context.applicationContext),
+                ).also { instance = it }
             }
     }
 }

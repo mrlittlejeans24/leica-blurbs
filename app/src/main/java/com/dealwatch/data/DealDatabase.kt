@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [TrackedProduct::class, PricePoint::class],
-    version = 1,
+    version = 2,
     exportSchema = false,
 )
 abstract class DealDatabase : RoomDatabase() {
@@ -23,7 +23,11 @@ abstract class DealDatabase : RoomDatabase() {
                     context.applicationContext,
                     DealDatabase::class.java,
                     "dealwatch.db",
-                ).build().also { instance = it }
+                )
+                    // Schema is local cache only (re-derivable from checks), so a
+                    // destructive upgrade is acceptable instead of writing migrations.
+                    .fallbackToDestructiveMigration()
+                    .build().also { instance = it }
             }
     }
 }
